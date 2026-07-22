@@ -24,6 +24,10 @@ public class Doctor: EntityBase
         IsActive = true;
     }
 
+    public void UpdateDetails(Speciality speciality)
+    {
+        Speciality = speciality;
+    }
     public void Deactivate()
     {
         IsActive = false;
