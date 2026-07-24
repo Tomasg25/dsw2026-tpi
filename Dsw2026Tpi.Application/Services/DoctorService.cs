@@ -25,13 +25,7 @@ public class DoctorService : IDoctorService
     }
 
 
-    public async Task<DoctorModel.Response> GetById(Guid id)
-    {
-        var doctor = await _persistence.GetById<Doctor>(id, nameof(Doctor.Speciality))
-            ?? throw new EntityNotFoundException(nameof(Doctor));
-
-        return ToResponse(doctor);
-    }
+   
 
     public async Task<DoctorModel.Response> Create(DoctorModel.Request request)
     {

@@ -39,6 +39,7 @@ public static class SecurityConfigurationExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
             });
+        // 
         services.AddAuthorizationBuilder()
             .AddPolicy(Policies.AdminPolicy, policy =>
                 policy.RequireRole(Roles.Administrator))
