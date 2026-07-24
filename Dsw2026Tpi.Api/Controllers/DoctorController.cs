@@ -7,14 +7,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace Dsw2026Tpi.Api.Controllers;
 
 [Route("doctors")]
-[Authorize(Policy = Policies.AdminPolicy)]
+[Authorize]
 public class DoctorController : AppController
 {
     private readonly IDoctorService _service;
-
-    public DoctorController(IDoctorService service)
+    private readonly IAvailabilityService _availabilityService;
+    public DoctorController(IDoctorService service, IAvailabilityService availabilityService)
     {
         _service = service;
+        _availabilityService = availabilityService;
     }
 
     [HttpGet]
@@ -25,13 +26,13 @@ public class DoctorController : AppController
         return Ok(doctors);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id}/availabilities")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetAvailabilities(Guid id)
     {
-        var doctor = await _service.GetById(id);
-        return Ok(doctor);
+        var result = await _availabilityService.GetWeeklyPattern(id);
+        return Ok(result);
     }
 
     [HttpPost]
@@ -64,4 +65,10 @@ public class DoctorController : AppController
         await _service.Delete(id);
         return Ok();
     }
+
+    
+
+
+
+
 }

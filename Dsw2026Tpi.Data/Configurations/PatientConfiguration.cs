@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Dsw2026Tpi.Data.Configurations
 {
-    public class PacientConfiguration : IEntityTypeConfiguration<Patient>
+    public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 
     {
         public void Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Patient> builder)
