@@ -5,6 +5,8 @@ using Dsw2026Tpi.CrossCutting.Helpers;
 using Dsw2026Tpi.CrossCutting.Identity;
 using Dsw2026Tpi.CrossCutting.Resources;
 using Dsw2026Tpi.Data.Identity;
+using Dsw2026Tpi.Domain.Entities;
+using Dsw2026Tpi.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
@@ -17,18 +19,21 @@ public class AuthenticationService : IAuthenticationService
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly JwtService _jwtService;
     private readonly ILogger<AuthenticationService> _logger;
+    private readonly IPersistence _persistence;
 
     public AuthenticationService(UserManager<ApplicationUser> userManager,
         ISignInService signInManager,
         RoleManager<IdentityRole> roleManager,
         JwtService jwtService,
-        ILogger<AuthenticationService> logger)
+        ILogger<AuthenticationService> logger,
+        IPersistence persistence)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _roleManager = roleManager;
         _jwtService = jwtService;
         _logger = logger;
+        _persistence = persistence;
     }
 
     public async Task<LoginAdminModel.Response> LoginAdmin(LoginAdminModel.Request request)
@@ -55,7 +60,7 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<LoginPatientModel.Response> LoginPatient(LoginPatientModel.Request request)
     {
-        if (!request.Email.IsEmailValid()) throw new AuthenticationException();
+        if (!request.Email.IsEmailValid()) throw new ValidationException("Email inválido", "LOGIN_PATIENT_EMAIL_INVALID");
         var dniLength = request.Dni.ToString().Length;
         if (request.Dni <= 0 || dniLength is < 7 or > 8)
             throw new ValidationException("El DNI debe tener 7 u 8 dígitos", "LOGIN_PATIENT_DNI_INVALID");
@@ -80,6 +85,12 @@ public class AuthenticationService : IAuthenticationService
         else if (user.Dni != request.Dni)
         {
             throw new AuthenticationException();
+        }
+        var patient = await _persistence.First<Patient>(p => p.Dni == request.Dni);
+        if (patient is null)
+        {
+            patient = new Patient(request.Dni);
+            await _persistence.Add(patient);
         }
         var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
         var token = _jwtService.GenerateToken(user.UserName!, role);
