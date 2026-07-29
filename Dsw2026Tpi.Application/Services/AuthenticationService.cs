@@ -89,8 +89,13 @@ public class AuthenticationService : IAuthenticationService
         var patient = await _persistence.First<Patient>(p => p.Dni == request.Dni);
         if (patient is null)
         {
-            patient = new Patient(request.Dni);
+            patient = new Patient(request.Dni) { UserId = Guid.Parse(user.Id) };
             await _persistence.Add(patient);
+        }
+        else if (patient.UserId != Guid.Parse(user.Id))
+        {
+            patient.UserId = Guid.Parse(user.Id);
+            await _persistence.Update(patient);
         }
         var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
         var token = _jwtService.GenerateToken(user.UserName!, role);
