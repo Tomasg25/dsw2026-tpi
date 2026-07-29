@@ -14,6 +14,7 @@ namespace Dsw2026Tpi.Data.Configurations
         {
             builder.ToTable("Patients");
             builder.HasIndex(p=>p.Dni).IsUnique();
+            builder.HasIndex(p=>p.UserId).IsUnique();   
         }
     }
 }

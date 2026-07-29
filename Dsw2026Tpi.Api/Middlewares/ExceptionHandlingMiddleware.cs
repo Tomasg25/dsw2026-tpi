@@ -48,6 +48,7 @@ public class ExceptionHandlingMiddleware
             status = ex switch
             {
                 ValidationException => HttpStatusCode.BadRequest,
+                BusinessRuleException=> HttpStatusCode.BadRequest,
                 EntityNotFoundException => HttpStatusCode.NotFound,
                 ConflictException or AuthenticationException => HttpStatusCode.Conflict,
                 AuthorizationException => HttpStatusCode.Unauthorized,
