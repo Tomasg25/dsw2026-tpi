@@ -6,7 +6,7 @@ namespace Dsw2026Tpi.Domain.Entities
 {
     
 
-    public class Availability : EntityBase
+    public class Availability : EntityDeletable
     {
         public Guid DoctorId { get; private set; }
         public Doctor? Doctor { get; private set; }
