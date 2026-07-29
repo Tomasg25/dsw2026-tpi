@@ -4,11 +4,11 @@ using System.Text;
 
 namespace Dsw2026Tpi.Domain.Entities
 {
-    public class Patient: EntityBase
+    public class Patient: EntityDeletable
     {
+        public Guid? UserId { get; set; }
         public long Dni { get; private set; }
-        public string? Name { get; private set; }
-        public string? Phone { get; private set; }
+        public string? FullName { get; private set; }
 
 
         #region Constructor for EF
@@ -16,13 +16,12 @@ namespace Dsw2026Tpi.Domain.Entities
         private Patient() { }
 #pragma warning restore CS8618
         #endregion
-        //lo dejamos null hasta que exista algun flujo que lo complete
+        
 
-        public Patient(long dni, string? name =null, string? phone= null, Guid? id=null): base(id) 
+        public Patient(long dni, string? fullName =null , Guid? id=null): base(id) 
         {
             Dni= dni;
-            Name= name;
-            Phone= phone;
+            FullName= fullName;
 
         }
     }

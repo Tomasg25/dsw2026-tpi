@@ -52,7 +52,7 @@ namespace Dsw2026Tpi.Application.Services
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             var slots = await _persistence.GetFiltered<Slot>(s =>
-                s.DoctorId == doctorId &&
+                s.Availability.DoctorId == doctorId &&
                 s.Status == SlotStatus.Available &&
                 s.Date >= today &&
                 (date == null || s.Date == date)) ?? [];
@@ -86,7 +86,7 @@ namespace Dsw2026Tpi.Application.Services
                 {
                     for (var slotStart = startTime; slotStart < endTime; slotStart = slotStart.AddMinutes(30))
                     {
-                        var slot = new Slot(availability, doctor, date, slotStart, slotStart.AddMinutes(30));
+                        var slot = new Slot(availability, date, slotStart, slotStart.AddMinutes(30));
                         await _persistence.Add(slot);
                     }
                 }

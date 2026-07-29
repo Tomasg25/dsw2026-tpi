@@ -1,6 +1,7 @@
 ﻿using Dsw2026Tpi.CrossCutting.Exceptions;
 using Dsw2026Tpi.CrossCutting.Models;
 using Dsw2026Tpi.CrossCutting.Resources;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text.Json;
 
@@ -32,7 +33,41 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception ex)
     {
-        ErrorResponse error = ex is AppException exApp ? 
+        ErrorResponse error;
+        HttpStatusCode status;
+
+        if (ex is DbUpdateConcurrencyException)
+        {
+            status = HttpStatusCode.Conflict;
+            error = new ErrorResponse("APPOINTMENT_CONFLICT", "Slot already booked");
+            error.AddDetail("dateTime", "slot_unavailable");
+        }
+        else if (ex is AppException exApp)
+        {
+            error = exApp.Error;
+            status = ex switch
+            {
+                ValidationException => HttpStatusCode.BadRequest,
+                EntityNotFoundException => HttpStatusCode.NotFound,
+                ConflictException or AuthenticationException => HttpStatusCode.Conflict,
+                AuthorizationException => HttpStatusCode.Unauthorized,
+                _ => HttpStatusCode.InternalServerError,
+            };
+        }
+        else
+        {
+            status = HttpStatusCode.InternalServerError; // 500 Internal Server Error
+            error = new ErrorResponse(nameof(ErrorCodes.UNHANDLED_ERROR), ErrorCodes.UNHANDLED_ERROR);
+        }
+
+        var result = JsonSerializer.Serialize(error);
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)status;
+        await context.Response.WriteAsync(result);
+
+
+        /*
+            ErrorResponse error = ex is AppException exApp ? 
             exApp.Error : 
             new ErrorResponse(nameof(ErrorCodes.UNHANDLED_ERROR), ErrorCodes.UNHANDLED_ERROR);
         var status = ex switch
@@ -47,5 +82,7 @@ public class ExceptionHandlingMiddleware
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)status;
         await context.Response.WriteAsync(result);
+        
+         */
     }
 }
