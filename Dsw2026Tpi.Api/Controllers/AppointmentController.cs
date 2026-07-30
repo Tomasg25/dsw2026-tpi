@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Dsw2026Tpi.Api.Controllers
 {
-    [Route("appointment")]
+    [Route("api/appointment")]
     [Authorize]
     public class AppointmentController : AppController
     {
