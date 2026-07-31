@@ -45,10 +45,10 @@ namespace Dsw2026Tpi.Application.Services
             var today = DateOnly.FromDateTime(DateTime.Today);
             var availabilities = await _persistence.GetFiltered<Availability>(a =>
                 a.DoctorId == doctorId && a.Year == today.Year && a.Month == today.Month) ?? [];
-            return availabilities.Select(a => new AvailabilityModel.WeeklyPatternDto(
+            return availabilities.Select(a => new AvailabilityModel.WeeklyPatternDto(a.DoctorId,
                 DayOfWeekNames[a.DayOfWeek], a.StartTime.ToString("HH:mm"), a.EndTime.ToString("HH:mm")));
         }
-        public async Task<IEnumerable<AvailabilityModel.SlotDto>> GetFreeSlots(Guid doctorId, DateOnly? date)
+        /*public async Task<IEnumerable<AvailabilityModel.SlotDto>> GetFreeSlots(Guid doctorId, DateOnly? date)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             var slots = await _persistence.GetFiltered<Slot>(s =>
@@ -58,7 +58,7 @@ namespace Dsw2026Tpi.Application.Services
                 (date == null || s.Date == date)) ?? [];
             return slots.OrderBy(s => s.Date).ThenBy(s => s.StartTime)
                 .Select(s => new AvailabilityModel.SlotDto(s.Id, s.Date, s.StartTime, s.EndTime));
-        }
+        }*/
         private async Task GenerateInternal(AvailabilityModel.Request request, bool overwrite)
         {
             var doctor = await _persistence.GetById<Doctor>(request.DoctorId)
@@ -83,7 +83,7 @@ namespace Dsw2026Tpi.Application.Services
                 var availability = new Availability(doctor, year, month, dayOfWeek, startTime, endTime);
                 await _persistence.Add(availability);
                 foreach (var date in DatesInMonthFor(dayOfWeek, today))
-                {
+                {//Analizar si manejar el registro de dias pasado con una excepcion o al menos un Log
                     for (var slotStart = startTime; slotStart < endTime; slotStart = slotStart.AddMinutes(30))
                     {
                         var slot = new Slot(availability, date, slotStart, slotStart.AddMinutes(30));

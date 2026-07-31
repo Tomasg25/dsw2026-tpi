@@ -35,12 +35,12 @@ namespace Dsw2026Tpi.Api.Controllers
             await _service.Update(request);
             return Ok();
         }
-        [HttpGet]
+      /*[HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetFreeSlots([FromQuery] Guid doctorId, [FromQuery] DateOnly? date = null)
+       public async Task<IActionResult> GetFreeSlots([FromQuery] Guid doctorId, [FromQuery] DateOnly? date = null)
         {
             var slots = await _service.GetFreeSlots(doctorId, date);
             return Ok(slots);
-        }
+        }*/
     }
 }

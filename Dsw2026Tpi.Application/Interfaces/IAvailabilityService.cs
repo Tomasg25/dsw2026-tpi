@@ -10,7 +10,7 @@ namespace Dsw2026Tpi.Application.Interfaces
         Task Create(AvailabilityModel.Request request);
         Task Update(AvailabilityModel.Request request);
         Task<IEnumerable<AvailabilityModel.WeeklyPatternDto>> GetWeeklyPattern(Guid doctorId); //dias disponibles del doctor
-        Task<IEnumerable<AvailabilityModel.SlotDto>> GetFreeSlots(Guid doctorId, DateOnly? date);
+        //Task<IEnumerable<AvailabilityModel.SlotDto>> GetFreeSlots(Guid doctorId, DateOnly? date);
 
 
 

@@ -22,8 +22,8 @@ namespace Dsw2026Tpi.Application.Services
             Validate(request);
             var doctor = await _persistence.GetById<Doctor>(request.DoctorId)
                 ?? throw new EntityNotFoundException(nameof(Doctor));
-            var slot = await _persistence.GetById<Slot>(request.AvailabilityId, nameof(Slot.Availability))
-                ?? throw new EntityNotFoundException(nameof(Slot));
+            var slot = await _persistence.GetById<Slot>(request.AvailabilitySlotId, nameof(Slot.Availability))
+                 ?? throw new EntityNotFoundException(nameof(Slot));
             if (slot.Availability!.DoctorId != request.DoctorId)
                 throw new ValidationException("El turno no pertenece al médico indicado", "APPOINTMENT_DOCTOR_MISMATCH");
             var today = DateOnly.FromDateTime(DateTime.Today);
@@ -48,7 +48,7 @@ namespace Dsw2026Tpi.Application.Services
         }
         public async Task Cancel(Guid id)
         {
-            var appointment = await _persistence.GetById<Appointment>(id)
+            var appointment = await _persistence.GetByIdBase<Appointment>(id)
                 ?? throw new EntityNotFoundException(nameof(Appointment));
             if (appointment.Status != AppointmentStatus.Booked)
                 throw new BusinessRuleException("Solo se puede cancelar un turno en estado BOOKED", "APPOINTMENT_NOT_CANCELLABLE");
@@ -61,10 +61,11 @@ namespace Dsw2026Tpi.Application.Services
         }
         public async Task<IEnumerable<AppointmentModel.PatientAppointmentDto>> GetByPatient(long dni)
         {
+            var today = DateTime.Today;
             var patient = await _persistence.First<Patient>(p => p.Dni == dni)
                 ?? throw new EntityNotFoundException(nameof(Patient));
             var appointments = await _persistence.GetFiltered<Appointment>(a =>
-                a.PatientId == patient.Id && a.Status == AppointmentStatus.Booked,
+                a.PatientId == patient.Id && a.Status == AppointmentStatus.Booked && a.CreatedAt > today,
                 "AvailabilitySlot.Availability.Doctor.Speciality") ?? [];
             return appointments.Select(a => new AppointmentModel.PatientAppointmentDto(
                 a.Id,

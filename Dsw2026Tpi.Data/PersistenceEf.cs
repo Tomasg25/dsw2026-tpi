@@ -38,10 +38,13 @@ public class PersistenceEf: IPersistence
     {
         return await Include(_context.Set<T>(), include).ToListAsync();
     }
-
-    public async Task<T?> GetById<T>(Guid id, params string[] include) where T : EntityBase
+    public async Task<T?> GetByIdBase<T>(Guid id, params string[] include) where T : EntityBase
     {
         return await Include(_context.Set<T>(), include).FirstOrDefaultAsync(e => e.Id == id);
+    }
+    public async Task<T?> GetById<T>(Guid id, params string[] include) where T :EntityDeletable
+    {
+        return await Include(_context.Set<T>(), include).FirstOrDefaultAsync(e => e.Id == id && !e.Deleted);
     }
 
     public async Task<IEnumerable<T>?> GetFiltered<T>(Expression<Func<T, bool>> predicate, params string[] include) where T : EntityBase

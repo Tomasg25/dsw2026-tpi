@@ -8,7 +8,7 @@ namespace Dsw2026Tpi.Application.Dtos
     {
         public record Request(Guid DoctorId, List<DayEntry> Days);
         public record DayEntry(string Day, string StartTime, string EndTime);
-        public record WeeklyPatternDto(string Day, string StartTime, string EndTime);
+        public record WeeklyPatternDto(Guid DoctorId,string Day, string StartTime, string EndTime);
         public record SlotDto(Guid Id, DateOnly Date, TimeOnly StartTime, TimeOnly EndTime);
 
 
