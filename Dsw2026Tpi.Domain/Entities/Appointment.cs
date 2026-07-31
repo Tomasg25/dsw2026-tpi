@@ -22,7 +22,7 @@ public class Appointment : EntityBase
     public DateTime? AttendedAt { get; private set; }
 
     // Campo para manejar la concurrencia (evitar doble reserva)
-    public byte[]? RowVersion { get; private set; }
+    //public byte[]? RowVersion { get; private set; }
 
     #region Constructor for EF
 #pragma warning disable CS8618

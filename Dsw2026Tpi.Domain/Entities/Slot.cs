@@ -19,7 +19,7 @@ namespace Dsw2026Tpi.Domain.Entities
         public TimeOnly StartTime { get; private set; }
         public TimeOnly EndTime { get; private set; }
         public SlotStatus Status { get; private set; }
-        public byte[]? RowVersion { get; private set; }
+        //public byte[]? RowVersion { get; private set; }
 
         #region Constructor for EF
 #pragma warning disable CS8618

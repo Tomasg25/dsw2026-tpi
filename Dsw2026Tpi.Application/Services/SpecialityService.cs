@@ -22,7 +22,7 @@ namespace Dsw2026Tpi.Application.Services
         {
             var result = await _persistence.Paginate<Speciality, string>(
                 pageSize, pageIndex,
-                s => s.IsActive && (string.IsNullOrWhiteSpace(name) || s.Name.Contains(name)),
+                s => !s.Deleted && (string.IsNullOrWhiteSpace(name) || s.Name.Contains(name)),
                 s => s.Name);
 
             return result.Map(s => new SpecialityModel.Response(s.Id, s.Name, s.Description));
@@ -49,12 +49,6 @@ namespace Dsw2026Tpi.Application.Services
             await _persistence.Update(speciality);
 
             return new SpecialityModel.Response(speciality.Id, speciality.Name, speciality.Description);
-
-            // Name/Description son init-only -> hay que reemplazar la instancia o cambiar a set
-            //var updated = new Speciality(request.Name, request.Description, speciality.Id);
-            //await _persistence.Update(updated);
-
-            //return new SpecialityModel.Response(updated.Id, updated.Name, updated.Description);
         }
 
         public async Task Delete(Guid id)
@@ -62,7 +56,7 @@ namespace Dsw2026Tpi.Application.Services
             var speciality = await _persistence.GetById<Speciality>(id)
                 ?? throw new EntityNotFoundException(nameof(Speciality));
 
-            speciality.Deactivate();
+            speciality.IsDelete();
             await _persistence.Update(speciality);
         }
 

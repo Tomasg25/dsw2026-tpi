@@ -12,7 +12,7 @@ namespace Dsw2026Tpi.Data.Configurations
         public void Configure(EntityTypeBuilder<Slot> builder)
         {
             builder.ToTable("Slots");
-            builder.Property(s => s.RowVersion).IsRowVersion(); // el IsRowVersion es para evitar doble reserva 
+            //builder.Property(s => s.RowVersion).IsRowVersion(); // IsRowVersion es para evitar doble reserva 
         }
     }
 }

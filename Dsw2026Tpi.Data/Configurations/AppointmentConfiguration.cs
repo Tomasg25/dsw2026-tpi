@@ -12,7 +12,7 @@ namespace Dsw2026Tpi.Data.Configurations
         public void Configure(EntityTypeBuilder<Appointment> builder)
         {
             builder.ToTable("Appointments");
-            builder.Property(a => a.RowVersion).IsRowVersion();
+            //builder.Property(a => a.RowVersion).IsRowVersion();
             builder.HasIndex(a => a.SlotId).IsUnique();
             builder.HasOne(a => a.AvailabilitySlot)
                 .WithMany()

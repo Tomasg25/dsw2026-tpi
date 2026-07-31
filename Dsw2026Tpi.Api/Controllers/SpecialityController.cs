@@ -18,7 +18,9 @@ namespace Dsw2026Tpi.Api.Controllers
         }
 
         [HttpGet]
-        //Aprender "bien" FromQuery y FromBody 
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetAll([FromQuery] int pageSize, [FromQuery] int pageIndex, [FromQuery] string? name = null)
         {
             var result = await _service.GetAll(pageSize, pageIndex, name);
