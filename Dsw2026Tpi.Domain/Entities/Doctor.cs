@@ -2,8 +2,8 @@
 
 public class Doctor: EntityDeletable
 {
-    public string Name { get; init; }
-    public string LicenseNumber { get; init; }
+    public string Name { get; private set; }
+    public string LicenseNumber { get; private set; }
     public bool IsActive { get; private set; }
     
     public Guid? SpecialityId { get; set; }
@@ -25,9 +25,11 @@ public class Doctor: EntityDeletable
         IsActive = true;
     }
 
-    public void UpdateDetails(Speciality speciality)
+    public void UpdateDetails(Speciality speciality, string name, string licenseNumber)
     {
         Speciality = speciality;
+        Name = name;
+        LicenseNumber = licenseNumber;
     }
     public void Deactivate()
     {

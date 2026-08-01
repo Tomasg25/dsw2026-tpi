@@ -4,6 +4,7 @@ using Dsw2026Tpi.CrossCutting.Exceptions;
 using Dsw2026Tpi.Domain.Entities;
 using Dsw2026Tpi.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,9 +14,11 @@ namespace Dsw2026Tpi.Application.Services
     public class AppointmentService : IAppointmentService
     {
         private readonly IPersistence _persistence;
-        public AppointmentService(IPersistence persistence)
+        private readonly ILogger<AppointmentService> _logger;
+        public AppointmentService(IPersistence persistence, ILogger<AppointmentService> logger)
         {
             _persistence = persistence;
+            _logger = logger;
         }
         public async Task<AppointmentModel.Response> Book(AppointmentModel.Request request)
         {
@@ -44,6 +47,8 @@ namespace Dsw2026Tpi.Application.Services
             }
             var appointment = new Appointment(slot.Id, patient.Id, request.Reason);
             await _persistence.Add(appointment);
+            _logger.LogInformation("Turno reservado: AppointmentId={AppointmentId}, SlotId={SlotId}, PatientDni={Dni}",
+            appointment.Id, slot.Id, request.Patient.Dni);
             return new AppointmentModel.Response(appointment.Id, appointment.Status.ToString());
         }
         public async Task Cancel(Guid id)
@@ -57,6 +62,7 @@ namespace Dsw2026Tpi.Application.Services
             var slot = await _persistence.GetById<Slot>(appointment.SlotId)
                 ?? throw new EntityNotFoundException(nameof(Slot));
             slot.Free();
+            _logger.LogInformation("Turno cancelado: AppointmentId={AppointmentId}", id);
             await _persistence.Update(slot);
         }
         public async Task<IEnumerable<AppointmentModel.PatientAppointmentDto>> GetByPatient(long dni)

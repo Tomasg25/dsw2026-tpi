@@ -3,6 +3,7 @@ using Dsw2026Tpi.Application.Interfaces;
 using Dsw2026Tpi.CrossCutting.Exceptions;
 using Dsw2026Tpi.Domain.Entities;
 using Dsw2026Tpi.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -34,18 +35,22 @@ namespace Dsw2026Tpi.Application.Services
             [DayOfWeek.Sunday] = "DOMINGO"
         };
         private readonly IPersistence _persistence;
-        public AvailabilityService(IPersistence persistence)
+        private readonly INonWorkingDayService _nonWorkingDayService;
+        private readonly ILogger<AvailabilityService> _logger;
+        public AvailabilityService(IPersistence persistence, INonWorkingDayService nonWorkingDayService, ILogger<AvailabilityService> logger)
         {
             _persistence = persistence;
+            _nonWorkingDayService = nonWorkingDayService;
+            _logger = logger;
         }
-        public async Task Create(AvailabilityModel.Request request) => await GenerateInternal(request, overwrite: false);
-        public async Task Update(AvailabilityModel.Request request) => await GenerateInternal(request, overwrite: true);
+        public async Task<IEnumerable<AvailabilityModel.WeeklyPatternDto>> Create(AvailabilityModel.Request request) => await GenerateInternal(request, overwrite: false);
+        public async Task<IEnumerable<AvailabilityModel.WeeklyPatternDto>> Update(AvailabilityModel.Request request) => await GenerateInternal(request, overwrite: true);
         public async Task<IEnumerable<AvailabilityModel.WeeklyPatternDto>> GetWeeklyPattern(Guid doctorId)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             var availabilities = await _persistence.GetFiltered<Availability>(a =>
                 a.DoctorId == doctorId && a.Year == today.Year && a.Month == today.Month) ?? [];
-            return availabilities.Select(a => new AvailabilityModel.WeeklyPatternDto(a.DoctorId,
+            return availabilities.Select(a => new AvailabilityModel.WeeklyPatternDto(a.Id,
                 DayOfWeekNames[a.DayOfWeek], a.StartTime.ToString("HH:mm"), a.EndTime.ToString("HH:mm")));
         }
         /*public async Task<IEnumerable<AvailabilityModel.SlotDto>> GetFreeSlots(Guid doctorId, DateOnly? date)
@@ -59,7 +64,7 @@ namespace Dsw2026Tpi.Application.Services
             return slots.OrderBy(s => s.Date).ThenBy(s => s.StartTime)
                 .Select(s => new AvailabilityModel.SlotDto(s.Id, s.Date, s.StartTime, s.EndTime));
         }*/
-        private async Task GenerateInternal(AvailabilityModel.Request request, bool overwrite)
+        private async Task<IEnumerable<AvailabilityModel.WeeklyPatternDto>> GenerateInternal(AvailabilityModel.Request request, bool overwrite)
         {
             var doctor = await _persistence.GetById<Doctor>(request.DoctorId)
                 ?? throw new EntityNotFoundException(nameof(Doctor));
@@ -67,8 +72,14 @@ namespace Dsw2026Tpi.Application.Services
             var today = DateOnly.FromDateTime(DateTime.Today);
             var year = today.Year;
             var month = today.Month;
+
+            if (!overwrite)
+                await ValidateNoOverlap(request, year, month);
+
             if (overwrite)
                 await RemoveExistingUnbookedSchedule(request.DoctorId, year, month);
+            var created = new List<Availability>();
+
             foreach (var entry in request.Days)
             {
                 var dayOfWeek = DayNames[entry.Day];
@@ -82,13 +93,45 @@ namespace Dsw2026Tpi.Application.Services
                 }
                 var availability = new Availability(doctor, year, month, dayOfWeek, startTime, endTime);
                 await _persistence.Add(availability);
+
+                created.Add(availability);
+
                 foreach (var date in DatesInMonthFor(dayOfWeek, today))
-                {//Analizar si manejar el registro de dias pasado con una excepcion o al menos un Log
+                {
+                    if (_nonWorkingDayService.IsHoliday(date))
+                        continue;
+
+                    //Analizar si manejar el registro de dias pasado con una excepcion o al menos un Log
                     for (var slotStart = startTime; slotStart < endTime; slotStart = slotStart.AddMinutes(30))
                     {
                         var slot = new Slot(availability, date, slotStart, slotStart.AddMinutes(30));
                         await _persistence.Add(slot);
                     }
+                }
+            }
+            _logger.LogInformation("Disponibilidad {Action} para DoctorId={DoctorId}, Mes={Month}/{Year}",
+            overwrite ? "actualizada" : "creada", request.DoctorId, month, year);
+
+            return created.Select(a => new AvailabilityModel.WeeklyPatternDto(a.DoctorId,
+                    DayOfWeekNames[a.DayOfWeek], a.StartTime.ToString("HH:mm"), a.EndTime.ToString("HH:mm")));
+        }
+            private async Task ValidateNoOverlap(AvailabilityModel.Request request, int year, int month)
+        {
+            foreach (var entry in request.Days)
+            {
+                var dayOfWeek = DayNames[entry.Day];
+                var startTime = TimeOnly.Parse(entry.StartTime);
+                var endTime = TimeOnly.Parse(entry.EndTime);
+
+                var existing = await _persistence.GetFiltered<Availability>(a =>
+                    a.DoctorId == request.DoctorId && a.Year == year && a.Month == month && a.DayOfWeek == dayOfWeek) ?? [];
+
+                foreach (var ex in existing)
+                {
+                    if (startTime < ex.EndTime && endTime > ex.StartTime)
+                        throw new BusinessRuleException(
+                            "El horario se solapa con una disponibilidad existente para el mismo día",
+                            "AVAILABILITY_OVERLAP");
                 }
             }
         }

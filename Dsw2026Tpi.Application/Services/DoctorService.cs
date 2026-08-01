@@ -3,16 +3,18 @@ using Dsw2026Tpi.Application.Interfaces;
 using Dsw2026Tpi.CrossCutting.Exceptions;
 using Dsw2026Tpi.Domain.Entities;
 using Dsw2026Tpi.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Dsw2026Tpi.Application.Services;
 
 public class DoctorService : IDoctorService
 {
     private readonly IPersistence _persistence;
-
-    public DoctorService(IPersistence persistence)
+    private readonly ILogger<DoctorService> _logger;
+    public DoctorService(IPersistence persistence, ILogger<DoctorService> logger)
     {
         _persistence = persistence;
+        _logger = logger;
     }
 
     public async Task<Pagination<DoctorModel.Response>> GetAll(int pageSize, int pageIndex, string? name = null)
@@ -50,7 +52,7 @@ public class DoctorService : IDoctorService
         var speciality = await _persistence.GetById<Speciality>(request.SpecialityId)
             ?? throw new ValidationException("La especialidad indicada no existe", "DOCTOR_SPECIALITY_NOT_FOUND");
 
-        doctor.UpdateDetails(speciality);
+        doctor.UpdateDetails(speciality, request.Name, request.LicenseNumber);
         await _persistence.Update(doctor);
 
         return ToResponse(doctor);

@@ -35,7 +35,7 @@ public class Program
             builder.Services.AddAppDependencies();
             builder.Services.AddControllers();
             builder.Services.AddHealthChecks();
-
+            builder.Services.AddAppRateLimiting(builder.Configuration);
 
             var app = builder.Build();
 
@@ -50,7 +50,7 @@ public class Program
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseCors();

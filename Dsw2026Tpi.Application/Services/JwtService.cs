@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,9 +10,11 @@ namespace Dsw2026Tpi.Application.Services;
 public class JwtService
 {
     private readonly IConfiguration _config;
-    public JwtService(IConfiguration config)
+    private readonly ILogger<JwtService> _logger;
+    public JwtService(IConfiguration config, ILogger<JwtService> logger)
     {
         _config = config;
+        _logger = logger;
     }
 
     public string GenerateToken(string username, string? role)

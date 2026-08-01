@@ -6,13 +6,14 @@ using Dsw2026Tpi.Domain.Entities;
 using Dsw2026Tpi.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Dsw2026Tpi.Api.Controllers
 {
-    [Route("api/appointment")]
+    [Route("api/appointments")]
     [Authorize]
     public class AppointmentController : AppController
     {
@@ -23,6 +24,10 @@ namespace Dsw2026Tpi.Api.Controllers
         }
         [HttpPost]
         [Authorize(Policy = Policies.PatientPolicy)]
+        [EnableRateLimiting("booking")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Book([FromBody] AppointmentModel.Request request)
         {
             var result = await _service.Book(request);
@@ -30,6 +35,10 @@ namespace Dsw2026Tpi.Api.Controllers
         }
         [HttpGet("patient")]
         [Authorize(Policy = Policies.PatientPolicy)]
+        [EnableRateLimiting("query")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> GetByPatient([FromQuery] long dni)
         {
             var result = await _service.GetByPatient(dni);
@@ -37,13 +46,18 @@ namespace Dsw2026Tpi.Api.Controllers
         }
         [HttpDelete("{id}")]
         [Authorize(Policy = Policies.PatientPolicy)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Cancel(Guid id)
         {
             await _service.Cancel(id);
-            return Ok();
+            return Ok("ok");
         }
         [HttpGet]
         [Authorize(Policy = Policies.AdminPolicy)]
+        [EnableRateLimiting("query")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetByDate([FromQuery] DateOnly date, [FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 1)
         {
             var result = await _service.GetByDate(date, pageSize, pageIndex);
@@ -51,6 +65,8 @@ namespace Dsw2026Tpi.Api.Controllers
         }
         [HttpGet("search")]
         [Authorize(Policy = Policies.AdminPolicy)]
+        [EnableRateLimiting("query")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Search([FromQuery] Guid? specialtyId, [FromQuery] Guid? doctorId, [FromQuery] long? dni, [FromQuery] DateOnly? date, [FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 1)
         {
             var result = await _service.Search(specialtyId, doctorId, dni, date, pageSize, pageIndex);
