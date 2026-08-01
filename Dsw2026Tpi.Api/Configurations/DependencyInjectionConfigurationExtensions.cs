@@ -18,6 +18,10 @@ public static class DependencyInjectionConfigurationExtensions
         services.AddScoped<ISpecialityService, SpecialityService>();
         services.AddScoped<IAvailabilityService, AvailabilityService>();
         services.AddScoped<IAppointmentService,AppointmentService>();
+        //services.AddScoped<INonWorkingDayService, NonWorkingDayService>();
+        var feriadosPath = Path.Combine(AppContext.BaseDirectory, "feriados.json");
+        services.AddSingleton<INonWorkingDayService>(sp =>
+        new NonWorkingDayService(feriadosPath, sp.GetRequiredService<ILogger<NonWorkingDayService>>()));
         return services;
     }
 }

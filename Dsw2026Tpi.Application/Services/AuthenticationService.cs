@@ -47,7 +47,7 @@ public class AuthenticationService : IAuthenticationService
             _logger.LogError("Intento de login fallido para: {Email}", request.Email);
             throw new AuthenticationException();
         }
-
+        _logger.LogInformation("Login exitoso: Rol={Role}, Email={Email}", "Admin", request.Email);
         var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
 
         var token  = _jwtService.GenerateToken(user.UserName!, role);
@@ -84,9 +84,11 @@ public class AuthenticationService : IAuthenticationService
         }
         else if (user.Dni != request.Dni)
         {
+            _logger.LogWarning("Intento de login fallido para: {Email}", request.Email);
             throw new AuthenticationException();
         }
         var patient = await _persistence.First<Patient>(p => p.Dni == request.Dni);
+        _logger.LogInformation("Login exitoso: Rol={Role}, Dni={Dni}", "Paciente", request.Dni);
         if (patient is null)
         {
             patient = new Patient(request.Dni) { UserId = Guid.Parse(user.Id) };
