@@ -12,13 +12,16 @@ namespace Dsw2026Tpi.Test
 {
     public class SpecialityServiceTest
     {
+        private readonly IPersistence _mockPersistence = Substitute.For<IPersistence>();
+        private readonly ILogger<SpecialityService> _mocklogger = Substitute.For<ILogger<SpecialityService>>();
+     
         [Fact]
         public async Task CreateSpeciality_DescripcionMenorA10Caracteres_LanzaValidationException()
         {
             // Arrange
-            var persistence = Substitute.For<IPersistence>();
-            var logger = Substitute.For<ILogger<SpecialityService>>();
-            var service = new SpecialityService(persistence, logger);
+            
+           
+            var service = new SpecialityService(_mockPersistence, _mocklogger);
 
             var request = new SpecialityModel.Request("Cardiologia", "corta");
 
@@ -29,5 +32,19 @@ namespace Dsw2026Tpi.Test
             Assert.Equal("SPECIALITY_DESCRIPTION_INVALID", ex.Error.ErrorCode);
         }
 
+        [Fact]
+        public async Task CreateSpeciality_NombreMayorA100Caracteres_LanzaValidationException()
+        {
+            // Arrange
+          
+            var service = new SpecialityService(_mockPersistence, _mocklogger);
+            var nombreLargo = new string('A', 101);
+            var request = new SpecialityModel.Request(nombreLargo, "Descripcion valida de prueba");
+            // Act 
+            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.Create(request));
+            //Assert
+            Assert.Equal("SPECIALITY_NAME_INVALID", ex.Error.ErrorCode);
+        }
     }
 }
+
