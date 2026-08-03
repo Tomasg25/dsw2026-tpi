@@ -97,12 +97,17 @@ namespace Dsw2026Tpi.Application.Services
                 a => a.AvailabilitySlot!.Date,
                 "AvailabilitySlot.Availability.Doctor.Speciality", "Patient");
             return result.Map(a => new AppointmentModel.SearchResultDto(
-                a.Id,
-                a.AvailabilitySlot!.Availability!.Doctor!.Speciality?.Name ?? "",
-                a.AvailabilitySlot.Availability.Doctor.Name,
-                a.AvailabilitySlot.Date,
-                $"{a.AvailabilitySlot.StartTime:HH:mm}-{a.AvailabilitySlot.EndTime:HH:mm}",
-                a.Status.ToString()));
+        a.Id,
+        a.Status.ToString(),
+        new AppointmentModel.SearchPatientDto(
+            a.Patient!.Dni,
+            a.Patient.FullName ?? ""),                                        
+        new AppointmentModel.SearchDoctorDto(
+            a.AvailabilitySlot!.Availability!.DoctorId,
+            a.AvailabilitySlot.Availability.Doctor!.Name,
+            new AppointmentModel.SearchSpecialtyDto(
+                a.AvailabilitySlot.Availability.Doctor.Speciality!.Id,
+                a.AvailabilitySlot.Availability.Doctor.Speciality.Name))));
         }
         private static void Validate(AppointmentModel.Request request)
         {
