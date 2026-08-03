@@ -19,15 +19,23 @@ public class DoctorService : IDoctorService
 
     public async Task<Pagination<DoctorModel.Response>> GetAll(int pageSize, int pageIndex, string? name = null)
     {
+        if (name != null)
+        {
+            bool v = name.Length is < 3 or > 100;
+            if (!v)
+                throw new ValidationException("El nombre debe tener entre 3 y 100 caracteres", "DOCTOR_NAME_INVALID");
+
+        }
+
         var doctors = await _persistence.Paginate<Doctor, string>(pageSize, pageIndex, d => (string.IsNullOrWhiteSpace(name) ||
-                                                   d.Name.Contains(name))&& !d.Speciality.Deleted && !d.Deleted && d.IsActive, x => x.Name, nameof(Doctor.Speciality));
+                                                   d.Name.Contains(name)) && !d.Speciality.Deleted && !d.Deleted && d.IsActive, x => x.Name, nameof(Doctor.Speciality));
 
         return doctors.Map(d => new DoctorModel.Response(d.Id, d.Name, d.LicenseNumber,
             new DoctorModel.SpecialityDto(d.Speciality?.Id, d.Speciality?.Name)));
     }
 
 
-   
+
 
     public async Task<DoctorModel.Response> Create(DoctorModel.Request request)
     {
