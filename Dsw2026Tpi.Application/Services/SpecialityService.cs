@@ -23,6 +23,13 @@ namespace Dsw2026Tpi.Application.Services
 
         public async Task<Pagination<SpecialityModel.Response>> GetAll(int pageSize, int pageIndex, string? name = null)
         {
+            if (name != null)
+            {
+                bool v = name.Length is < 3 or > 100;
+                if (!v)
+                    throw new ValidationException("El nombre debe tener entre 3 y 100 caracteres", "DOCTOR_NAME_INVALID");
+
+            }
             var result = await _persistence.Paginate<Speciality, string>(
                 pageSize, pageIndex,
                 s => !s.Deleted && (string.IsNullOrWhiteSpace(name) || s.Name.Contains(name)),
