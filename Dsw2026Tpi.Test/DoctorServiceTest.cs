@@ -11,7 +11,7 @@ using Dsw2026Tpi.CrossCutting.Exceptions;
 
 namespace Dsw2026Tpi.Test
 {
-    public class PruebaUnitaria
+    public class DoctorServiceTest
     {
         private readonly IPersistence _mockPersistence = Substitute.For<IPersistence>();
         private readonly ILogger<DoctorService> _mockLogger = Substitute.For<ILogger<DoctorService>>();
