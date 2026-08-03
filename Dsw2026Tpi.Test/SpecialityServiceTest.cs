@@ -16,7 +16,7 @@ namespace Dsw2026Tpi.Test
         private readonly ILogger<SpecialityService> _mocklogger = Substitute.For<ILogger<SpecialityService>>();
      
         [Fact]
-        public async Task CreateSpeciality_DescripcionMenorA10Caracteres_LanzaValidationException()
+        public async Task CreateSpeciality_CuandoLaDescripcionEsMenorA10Caracteres_EntoncesLanzaException()
         {
             // Arrange
             
@@ -33,7 +33,7 @@ namespace Dsw2026Tpi.Test
         }
 
         [Fact]
-        public async Task CreateSpeciality_NombreMayorA100Caracteres_LanzaValidationException()
+        public async Task CreateSpeciality_CuandoElNombreEsMayorA100Caracteres_EntoncesLanzaException()
         {
             // Arrange
           

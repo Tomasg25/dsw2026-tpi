@@ -17,7 +17,7 @@ namespace Dsw2026Tpi.Test
         private readonly ILogger<DoctorService> _mockLogger = Substitute.For<ILogger<DoctorService>>();
 
         [Fact]
-        public async Task CreateDoctor_NombreMenorA3Caracteres_LanzaValidationException()
+        public async Task CreateDoctor_CuandoElNombreEsMenorA3Caracteres_EntoncesLanzaException()
         {
             // Arrange
             var service = new DoctorService(_mockPersistence, _mockLogger);
