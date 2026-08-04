@@ -114,7 +114,7 @@ namespace Dsw2026Tpi.Application.Services
             var dniLength = request.Patient.Dni.ToString().Length;
             if (request.Patient.Dni <= 0 || dniLength is < 7 or > 8)
                 throw new ValidationException("El DNI debe tener entre 7 y 8 dígitos", "APPOINTMENT_DNI_INVALID");
-            if (string.IsNullOrWhiteSpace(request.Reason) || request.Reason.Length < 5)
+            if (string.IsNullOrWhiteSpace(request.Reason) || request.Reason.Length > 5)
                 throw new ValidationException("El motivo debe tener al menos 5 caracteres", "APPOINTMENT_REASON_INVALID");
         }
     }
