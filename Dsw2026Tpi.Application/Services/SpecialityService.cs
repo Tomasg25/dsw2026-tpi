@@ -26,8 +26,8 @@ namespace Dsw2026Tpi.Application.Services
             if (name != null)
             {
                 bool v = name.Length is < 3 or > 100;
-                if (!v)
-                    throw new ValidationException("El nombre debe tener entre 3 y 100 caracteres", "DOCTOR_NAME_INVALID");
+                if (v)
+                    throw new ValidationException("El nombre debe tener entre 3 y 100 caracteres", "SPECIALITY_NAME_INVALID");
 
             }
             var result = await _persistence.Paginate<Speciality, string>(

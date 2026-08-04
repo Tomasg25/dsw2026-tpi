@@ -38,6 +38,24 @@ public static class SecurityConfigurationExtensions
                     ValidAudience = audience,
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = 401;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsync(
+                            """{"errorCode":"AUTHENTICATION_FAILED","message":"Usuario o contraseña incorrectos"}""");
+                    },
+                    OnForbidden = async context =>
+                    {
+                        context.Response.StatusCode = 403;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsync(
+                            """{"errorCode":"AUTHORIZATION_FAILED","message":"Se requieren permisos para la operación solicitada"}""");
+                    }
+                };
             });
         // 
         services.AddAuthorizationBuilder()
