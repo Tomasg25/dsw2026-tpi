@@ -35,7 +35,7 @@ namespace Dsw2026Tpi.Api.Controllers
         }
         [HttpGet("patient")]
         [Authorize(Policy = Policies.PatientPolicy)]
-        [EnableRateLimiting("query")]
+        [EnableRateLimiting("global")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -46,6 +46,7 @@ namespace Dsw2026Tpi.Api.Controllers
         }
         [HttpDelete("{id}")]
         [Authorize(Policy = Policies.PatientPolicy)]
+        [EnableRateLimiting("global")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -56,7 +57,7 @@ namespace Dsw2026Tpi.Api.Controllers
         }
         [HttpGet]
         [Authorize(Policy = Policies.AdminPolicy)]
-        [EnableRateLimiting("query")]
+        [EnableRateLimiting("global")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetByDate([FromQuery] DateOnly date, [FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 1)
         {
@@ -65,7 +66,7 @@ namespace Dsw2026Tpi.Api.Controllers
         }
         [HttpGet("search")]
         [Authorize(Policy = Policies.AdminPolicy)]
-        [EnableRateLimiting("query")]
+        [EnableRateLimiting("global")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Search([FromQuery] Guid? specialtyId, [FromQuery] Guid? doctorId, [FromQuery] long? dni, [FromQuery] DateOnly? date, [FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 1)
         {

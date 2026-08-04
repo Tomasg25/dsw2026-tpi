@@ -89,12 +89,12 @@ namespace Dsw2026Tpi.Application.Services
                 var dayOfWeek = DayNames[entry.Day];
                 var startTime = TimeOnly.Parse(entry.StartTime);
                 var endTime = TimeOnly.Parse(entry.EndTime);
-                if (!overwrite)
+                /*if (!overwrite)
                 {
                     var alreadyExists = await _persistence.First<Availability>(a =>
                         a.DoctorId == request.DoctorId && a.Year == year && a.Month == month && a.DayOfWeek == dayOfWeek);
                     if (alreadyExists is not null) continue; // ya configurado este mes, no duplicar
-                }
+                }*/
                 var availability = new Availability(doctor, year, month, dayOfWeek, startTime, endTime);
                 await _persistence.Add(availability);
 
