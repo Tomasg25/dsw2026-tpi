@@ -18,9 +18,11 @@ namespace Dsw2026Tpi.Application.Services
         {
             ["LUNES"] = DayOfWeek.Monday,
             ["MARTES"] = DayOfWeek.Tuesday,
+            ["MIÉRCOLES"] = DayOfWeek.Wednesday,
             ["MIERCOLES"] = DayOfWeek.Wednesday,
             ["JUEVES"] = DayOfWeek.Thursday,
             ["VIERNES"] = DayOfWeek.Friday,
+            ["SÁBADO"] = DayOfWeek.Saturday,
             ["SABADO"] = DayOfWeek.Saturday,
             ["DOMINGO"] = DayOfWeek.Sunday
         };
@@ -28,9 +30,11 @@ namespace Dsw2026Tpi.Application.Services
         {
             [DayOfWeek.Monday] = "LUNES",
             [DayOfWeek.Tuesday] = "MARTES",
+            [DayOfWeek.Wednesday] = "MIÉRCOLES",
             [DayOfWeek.Wednesday] = "MIERCOLES",
             [DayOfWeek.Thursday] = "JUEVES",
             [DayOfWeek.Friday] = "VIERNES",
+            [DayOfWeek.Saturday] = "SÁBADO",
             [DayOfWeek.Saturday] = "SABADO",
             [DayOfWeek.Sunday] = "DOMINGO"
         };
@@ -101,7 +105,6 @@ namespace Dsw2026Tpi.Application.Services
                     if (_nonWorkingDayService.IsHoliday(date))
                         continue;
 
-                    //Analizar si manejar el registro de dias pasado con una excepcion o al menos un Log
                     for (var slotStart = startTime; slotStart < endTime; slotStart = slotStart.AddMinutes(30))
                     {
                         var slot = new Slot(availability, date, slotStart, slotStart.AddMinutes(30));

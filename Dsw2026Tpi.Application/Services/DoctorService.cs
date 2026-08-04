@@ -22,7 +22,7 @@ public class DoctorService : IDoctorService
         if (name != null)
         {
             bool v = name.Length is < 3 or > 100;
-            if (!v)
+            if (v)
                 throw new ValidationException("El nombre debe tener entre 3 y 100 caracteres", "DOCTOR_NAME_INVALID");
 
         }
