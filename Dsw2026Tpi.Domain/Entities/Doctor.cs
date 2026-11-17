@@ -35,4 +35,9 @@ public class Doctor: EntityDeletable
     {
         IsActive = false;
     }
+
+    public void Activate()
+    {
+        IsActive = true;
+    }
 }

@@ -4,60 +4,62 @@ using Dsw2026Tpi.CrossCutting.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+namespace Dsw2026Tpi.Api.Controllers;
 
-namespace Dsw2026Tpi.Api.Controllers
+[Route("api/specialties")]
+[Authorize]
+[EnableRateLimiting("global")]
+public class SpecialityController : AppController
 {
-    [Route("api/specialties")]
-    [Authorize]
-    [EnableRateLimiting("global")]
-    public class SpecialityController : AppController
+    private readonly ISpecialityService _service;
+    public SpecialityController(ISpecialityService service)
     {
-        private readonly ISpecialityService _service;
-
-        public SpecialityController(ISpecialityService service)
-        {
-            _service = service;
-        }
-
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetAll([FromQuery] int pageSize, [FromQuery] int pageIndex, [FromQuery] string? name = null)
-        {
-            var result = await _service.GetAll(pageSize, pageIndex, name);
-            return Ok(result);
-        }
-
-        [HttpPost]
-        [Authorize(Policy = Policies.AdminPolicy)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Create([FromBody] SpecialityModel.Request request)
-        {
-            var result = await _service.Create(request);
-            return Ok(result);
-        }
-
-        [HttpPut("{id}")]
-        [Authorize(Policy = Policies.AdminPolicy)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Update(Guid id, [FromBody] SpecialityModel.Request request)
-        {
-            var result = await _service.Update(id, request);
-            return Ok(result);
-        }
-
-        [HttpDelete("{id}")]
-        [Authorize(Policy = Policies.AdminPolicy)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(Guid id)
-        {
-            await _service.Delete(id);
-            return Ok("ok");
-        }
+        _service = service;
+    }
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAll([FromQuery] int pageSize, [FromQuery] int pageIndex, [FromQuery] string? name = null)
+    {
+        var result = await _service.GetAll(pageSize, pageIndex, name);
+        return Ok(result);
+    }
+    [HttpPost]
+    [Authorize(Policy = Policies.AdminPolicy)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Create([FromBody] SpecialityModel.Request request)
+    {
+        var result = await _service.Create(request);
+        return Ok(result);
+    }
+    [HttpPut("{id}")]
+    [Authorize(Policy = Policies.AdminPolicy)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(Guid id, [FromBody] SpecialityModel.Request request)
+    {
+        var result = await _service.Update(id, request);
+        return Ok(result);
+    }
+    [HttpDelete("{id}")]
+    [Authorize(Policy = Policies.AdminPolicy)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await _service.Delete(id);
+        return Ok("ok");
+    }
+    [HttpPatch("{id}/toggle-status")]
+    [Authorize(Policy = Policies.AdminPolicy)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ToggleStatus(Guid id)
+    {
+        var result = await _service.ToggleStatus(id);
+        return Ok(result);
     }
 }
