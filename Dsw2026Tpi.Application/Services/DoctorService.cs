@@ -28,14 +28,10 @@ public class DoctorService : IDoctorService
         }
 
         var doctors = await _persistence.Paginate<Doctor, string>(pageSize, pageIndex, d => (string.IsNullOrWhiteSpace(name) ||
-                                                   d.Name.Contains(name)) && !d.Speciality.Deleted && !d.Deleted && d.IsActive, x => x.Name, nameof(Doctor.Speciality));
+                                                   d.Name.Contains(name)) && !d.Speciality.Deleted && !d.Deleted, x => x.Name, nameof(Doctor.Speciality));
 
-        return doctors.Map(d => new DoctorModel.Response(d.Id, d.Name, d.LicenseNumber,
-            new DoctorModel.SpecialityDto(d.Speciality?.Id, d.Speciality?.Name)));
+        return doctors.Map(d => ToResponse(d));
     }
-
-
-
 
     public async Task<DoctorModel.Response> Create(DoctorModel.Request request)
     {
@@ -75,8 +71,23 @@ public class DoctorService : IDoctorService
         await _persistence.Update(doctor);
     }
 
+    public async Task<DoctorModel.Response> ToggleStatus(Guid id)
+    {
+        var doctor = await _persistence.GetById<Doctor>(id, nameof(Doctor.Speciality))
+            ?? throw new EntityNotFoundException(nameof(Doctor));
+
+        if (doctor.IsActive)
+            doctor.Deactivate();
+        else
+            doctor.Activate();
+
+        await _persistence.Update(doctor);
+
+        return ToResponse(doctor);
+    }
+
     private static DoctorModel.Response ToResponse(Doctor d) =>
-        new(d.Id, d.Name, d.LicenseNumber, new DoctorModel.SpecialityDto(d.Speciality?.Id, d.Speciality?.Name));
+        new(d.Id, d.Name, d.LicenseNumber, d.IsActive, new DoctorModel.SpecialityDto(d.Speciality?.Id, d.Speciality?.Name));
 
     private static void Validate(DoctorModel.Request request)
     {
@@ -88,5 +99,4 @@ public class DoctorService : IDoctorService
     }
 
 }
-
 

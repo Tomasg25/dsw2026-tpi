@@ -23,7 +23,7 @@ public class DoctorController : AppController
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetAll([FromQuery]int pageSize, [FromQuery]int pageIndex, [FromQuery]string? name = null)
+    public async Task<IActionResult> GetAll([FromQuery] int pageSize, [FromQuery] int pageIndex, [FromQuery] string? name = null)
     {
         var doctors = await _service.GetAll(pageSize, pageIndex, name);
         return Ok(doctors);
@@ -69,9 +69,13 @@ public class DoctorController : AppController
         return Ok("ok");
     }
 
-    
-
-
-
-
+    [HttpPatch("{id}/toggle-status")]
+    [Authorize(Policy = Policies.AdminPolicy)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ToggleStatus(Guid id)
+    {
+        var doctor = await _service.ToggleStatus(id);
+        return Ok(doctor);
+    }
 }
