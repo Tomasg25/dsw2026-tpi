@@ -57,7 +57,7 @@ namespace Dsw2026Tpi.Application.Services
             return availabilities.Select(a => new AvailabilityModel.WeeklyPatternDto(a.Id,
                 DayOfWeekNames[a.DayOfWeek], a.StartTime.ToString("HH:mm"), a.EndTime.ToString("HH:mm")));
         }
-        /*public async Task<IEnumerable<AvailabilityModel.SlotDto>> GetFreeSlots(Guid doctorId, DateOnly? date)
+        public async Task<IEnumerable<AvailabilityModel.SlotDto>> GetFreeSlots(Guid doctorId, DateOnly? date)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             var slots = await _persistence.GetFiltered<Slot>(s =>
@@ -67,7 +67,7 @@ namespace Dsw2026Tpi.Application.Services
                 (date == null || s.Date == date)) ?? [];
             return slots.OrderBy(s => s.Date).ThenBy(s => s.StartTime)
                 .Select(s => new AvailabilityModel.SlotDto(s.Id, s.Date, s.StartTime, s.EndTime));
-        }*/
+        }
         private async Task<IEnumerable<AvailabilityModel.WeeklyPatternDto>> GenerateInternal(AvailabilityModel.Request request, bool overwrite)
         {
             var doctor = await _persistence.GetById<Doctor>(request.DoctorId)
