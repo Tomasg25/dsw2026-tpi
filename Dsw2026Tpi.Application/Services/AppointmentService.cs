@@ -67,11 +67,11 @@ namespace Dsw2026Tpi.Application.Services
         }
         public async Task<IEnumerable<AppointmentModel.PatientAppointmentDto>> GetByPatient(long dni)
         {
-            var today = DateTime.Today;
+            var today = DateOnly.FromDateTime(DateTime.Today);
             var patient = await _persistence.First<Patient>(p => p.Dni == dni)
                 ?? throw new EntityNotFoundException(nameof(Patient));
             var appointments = await _persistence.GetFiltered<Appointment>(a =>
-                a.PatientId == patient.Id && a.Status == AppointmentStatus.Booked && a.CreatedAt > today,
+                a.PatientId == patient.Id && a.Status == AppointmentStatus.Booked && a.AvailabilitySlot!.Date >= today,
                 "AvailabilitySlot.Availability.Doctor.Speciality") ?? [];
             return appointments.Select(a => new AppointmentModel.PatientAppointmentDto(
                 a.Id,
@@ -97,17 +97,20 @@ namespace Dsw2026Tpi.Application.Services
                 a => a.AvailabilitySlot!.Date,
                 "AvailabilitySlot.Availability.Doctor.Speciality", "Patient");
             return result.Map(a => new AppointmentModel.SearchResultDto(
-        a.Id,
-        a.Status.ToString(),
-        new AppointmentModel.SearchPatientDto(
-            a.Patient!.Dni,
-            a.Patient.FullName ?? ""),                                        
-        new AppointmentModel.SearchDoctorDto(
-            a.AvailabilitySlot!.Availability!.DoctorId,
-            a.AvailabilitySlot.Availability.Doctor!.Name,
-            new AppointmentModel.SearchSpecialtyDto(
-                a.AvailabilitySlot.Availability.Doctor.Speciality!.Id,
-                a.AvailabilitySlot.Availability.Doctor.Speciality.Name))));
+                    a.Id,
+                    a.Status.ToString(),
+                    a.AvailabilitySlot!.Date,
+                    a.AvailabilitySlot.StartTime.ToString("HH:mm"),
+                    a.AvailabilitySlot.EndTime.ToString("HH:mm"),
+                    new AppointmentModel.SearchPatientDto(
+                        a.Patient!.Dni,
+                        a.Patient.FullName ?? ""),
+                        new AppointmentModel.SearchDoctorDto(
+                            a.AvailabilitySlot.Availability!.DoctorId,
+                            a.AvailabilitySlot.Availability.Doctor!.Name,
+                            new AppointmentModel.SearchSpecialtyDto(
+                                a.AvailabilitySlot.Availability.Doctor.Speciality!.Id,
+                                a.AvailabilitySlot.Availability.Doctor.Speciality.Name))));
         }
         private static void Validate(AppointmentModel.Request request)
         {
