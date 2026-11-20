@@ -66,7 +66,14 @@ public class DoctorService : IDoctorService
     {
         var doctor = await _persistence.GetById<Doctor>(id)
             ?? throw new EntityNotFoundException(nameof(Doctor));
-
+        var hasBookedAppointments = await _persistence.First<Appointment>(a =>
+            a.AvailabilitySlot!.Availability!.DoctorId == id &&
+            a.Status == AppointmentStatus.Booked,
+            "AvailabilitySlot.Availability");
+        if (hasBookedAppointments is not null)
+            throw new BusinessRuleException(
+                "No se puede eliminar un doctor que tiene turnos reservados",
+                "DOCTOR_HAS_BOOKED_APPOINTMENTS");
         doctor.IsDelete();
         await _persistence.Update(doctor);
     }
@@ -75,14 +82,23 @@ public class DoctorService : IDoctorService
     {
         var doctor = await _persistence.GetById<Doctor>(id, nameof(Doctor.Speciality))
             ?? throw new EntityNotFoundException(nameof(Doctor));
-
         if (doctor.IsActive)
+        {
+            var hasBookedAppointments = await _persistence.First<Appointment>(a =>
+                a.AvailabilitySlot!.Availability!.DoctorId == id &&
+                a.Status == AppointmentStatus.Booked,
+                "AvailabilitySlot.Availability");
+            if (hasBookedAppointments is not null)
+                throw new BusinessRuleException(
+                    "No se puede desactivar un doctor que tiene turnos reservados",
+                    "DOCTOR_HAS_BOOKED_APPOINTMENTS");
             doctor.Deactivate();
+        }
         else
+        {
             doctor.Activate();
-
+        }
         await _persistence.Update(doctor);
-
         return ToResponse(doctor);
     }
 

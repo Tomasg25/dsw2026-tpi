@@ -49,20 +49,54 @@ public class SpecialityService : ISpecialityService
     {
         var speciality = await _persistence.GetById<Speciality>(id)
             ?? throw new EntityNotFoundException(nameof(Speciality));
+        var hasActiveDoctors = await _persistence.First<Doctor>(d =>
+            d.SpecialityId == id && !d.Deleted);
+        if (hasActiveDoctors is not null)
+            throw new BusinessRuleException(
+                "No se puede eliminar una especialidad que tiene doctores asignados",
+                "SPECIALITY_HAS_DOCTORS");
+        var hasBookedAppointments = await _persistence.First<Appointment>(a =>
+            a.AvailabilitySlot!.Availability!.Doctor!.SpecialityId == id &&
+            a.Status == AppointmentStatus.Booked,
+            "AvailabilitySlot.Availability.Doctor");
+        if (hasBookedAppointments is not null)
+            throw new BusinessRuleException(
+                "No se puede eliminar una especialidad que tiene turnos reservados",
+                "SPECIALITY_HAS_BOOKED_APPOINTMENTS");
         speciality.IsDelete();
         await _persistence.Update(speciality);
     }
+
     public async Task<SpecialityModel.Response> ToggleStatus(Guid id)
     {
         var speciality = await _persistence.GetById<Speciality>(id)
             ?? throw new EntityNotFoundException(nameof(Speciality));
         if (speciality.IsActive)
+        {
+            var hasActiveDoctors = await _persistence.First<Doctor>(d =>
+                d.SpecialityId == id && !d.Deleted);
+            if (hasActiveDoctors is not null)
+                throw new BusinessRuleException(
+                    "No se puede desactivar una especialidad que tiene doctores asignados",
+                    "SPECIALITY_HAS_DOCTORS");
+            var hasBookedAppointments = await _persistence.First<Appointment>(a =>
+                a.AvailabilitySlot!.Availability!.Doctor!.SpecialityId == id &&
+                a.Status == AppointmentStatus.Booked,
+                "AvailabilitySlot.Availability.Doctor");
+            if (hasBookedAppointments is not null)
+                throw new BusinessRuleException(
+                    "No se puede desactivar una especialidad que tiene turnos reservados",
+                    "SPECIALITY_HAS_BOOKED_APPOINTMENTS");
             speciality.Deactivate();
+        }
         else
+        {
             speciality.Activate();
+        }
         await _persistence.Update(speciality);
         return ToResponse(speciality);
     }
+
     private static SpecialityModel.Response ToResponse(Speciality s) =>
         new(s.Id, s.Name, s.Description, s.IsActive);
     private static void Validate(SpecialityModel.Request request)
