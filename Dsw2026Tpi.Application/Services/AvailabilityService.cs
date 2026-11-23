@@ -10,8 +10,6 @@ using System.Text;
 
 namespace Dsw2026Tpi.Application.Services
 {
-
-
     public class AvailabilityService : IAvailabilityService
     {
         private static readonly Dictionary<string, DayOfWeek> DayNames = new(StringComparer.OrdinalIgnoreCase)
@@ -30,11 +28,9 @@ namespace Dsw2026Tpi.Application.Services
         {
             [DayOfWeek.Monday] = "LUNES",
             [DayOfWeek.Tuesday] = "MARTES",
-            [DayOfWeek.Wednesday] = "MIÉRCOLES",
             [DayOfWeek.Wednesday] = "MIERCOLES",
             [DayOfWeek.Thursday] = "JUEVES",
             [DayOfWeek.Friday] = "VIERNES",
-            [DayOfWeek.Saturday] = "SÁBADO",
             [DayOfWeek.Saturday] = "SABADO",
             [DayOfWeek.Sunday] = "DOMINGO"
         };
@@ -52,10 +48,18 @@ namespace Dsw2026Tpi.Application.Services
         public async Task<IEnumerable<AvailabilityModel.WeeklyPatternDto>> GetWeeklyPattern(Guid doctorId)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var availabilities = await _persistence.GetFiltered<Availability>(a =>
-                a.DoctorId == doctorId && a.Year == today.Year && a.Month == today.Month) ?? [];
-            return availabilities.Select(a => new AvailabilityModel.WeeklyPatternDto(a.Id,
-                DayOfWeekNames[a.DayOfWeek], a.StartTime.ToString("HH:mm"), a.EndTime.ToString("HH:mm")));
+            var availabilities = (await _persistence.GetFiltered<Availability>(a =>
+                a.DoctorId == doctorId && a.Year == today.Year && a.Month == today.Month) ?? []).ToList();
+
+            var result = new List<AvailabilityModel.WeeklyPatternDto>();
+            foreach (var a in availabilities)
+            {
+                var slots = (await _persistence.GetFiltered<Slot>(s => s.AvailabilityId == a.Id) ?? []).ToList();
+                var hasBookings = slots.Any(s => s.Status != SlotStatus.Available);
+                result.Add(new AvailabilityModel.WeeklyPatternDto(a.Id,
+                    DayOfWeekNames[a.DayOfWeek], a.StartTime.ToString("HH:mm"), a.EndTime.ToString("HH:mm"), hasBookings));
+            }
+            return result;
         }
         public async Task<IEnumerable<AvailabilityModel.SlotDto>> GetFreeSlots(Guid doctorId, DateOnly? date)
         {
@@ -80,8 +84,31 @@ namespace Dsw2026Tpi.Application.Services
             if (!overwrite)
                 await ValidateNoOverlap(request, year, month);
 
+            var preserved = new HashSet<(DayOfWeek Day, TimeOnly Start, TimeOnly End)>();
             if (overwrite)
-                await RemoveExistingUnbookedSchedule(request.DoctorId, year, month);
+            {
+                var requestedEntries = request.Days
+                    .Select(d => (DayNames[d.Day], TimeOnly.Parse(d.StartTime), TimeOnly.Parse(d.EndTime)))
+                    .ToHashSet();
+                var existing = (await _persistence.GetFiltered<Availability>(a =>
+                    a.DoctorId == request.DoctorId && a.Year == year && a.Month == month) ?? []).ToList();
+
+                foreach (var avail in existing)
+                {
+                    if (!requestedEntries.Contains((avail.DayOfWeek, avail.StartTime, avail.EndTime)))
+                    {
+                        var slots = (await _persistence.GetFiltered<Slot>(s =>
+                            s.AvailabilityId == avail.Id) ?? []).ToList();
+                        if (slots.Any(s => s.Status != SlotStatus.Available))
+                            throw new BusinessRuleException(
+                                "No se puede eliminar una disponibilidad con turnos asignados",
+                                "AVAILABILITY_HAS_BOOKINGS");
+                    }
+                }
+
+                preserved = await RemoveExistingUnbookedSchedule(request.DoctorId, year, month);
+            }
+
             var created = new List<Availability>();
 
             foreach (var entry in request.Days)
@@ -89,12 +116,18 @@ namespace Dsw2026Tpi.Application.Services
                 var dayOfWeek = DayNames[entry.Day];
                 var startTime = TimeOnly.Parse(entry.StartTime);
                 var endTime = TimeOnly.Parse(entry.EndTime);
-                /*if (!overwrite)
+
+                if (preserved.Contains((dayOfWeek, startTime, endTime)))
+                    continue;
+
+                foreach (var p in preserved.Where(p => p.Day == dayOfWeek))
                 {
-                    var alreadyExists = await _persistence.First<Availability>(a =>
-                        a.DoctorId == request.DoctorId && a.Year == year && a.Month == month && a.DayOfWeek == dayOfWeek);
-                    if (alreadyExists is not null) continue; // ya configurado este mes, no duplicar
-                }*/
+                    if (startTime < p.End && p.Start < endTime)
+                        throw new BusinessRuleException(
+                            "El horario se superpone con una disponibilidad que tiene turnos asignados",
+                            "AVAILABILITY_OVERLAP_BOOKED");
+                }
+
                 var availability = new Availability(doctor, year, month, dayOfWeek, startTime, endTime);
                 await _persistence.Add(availability);
 
@@ -112,13 +145,14 @@ namespace Dsw2026Tpi.Application.Services
                     }
                 }
             }
+
             _logger.LogInformation("Disponibilidad {Action} para DoctorId={DoctorId}, Mes={Month}/{Year}",
-            overwrite ? "actualizada" : "creada", request.DoctorId, month, year);
+                overwrite ? "actualizada" : "creada", request.DoctorId, month, year);
 
             return created.Select(a => new AvailabilityModel.WeeklyPatternDto(a.DoctorId,
-                    DayOfWeekNames[a.DayOfWeek], a.StartTime.ToString("HH:mm"), a.EndTime.ToString("HH:mm")));
+                DayOfWeekNames[a.DayOfWeek], a.StartTime.ToString("HH:mm"), a.EndTime.ToString("HH:mm")));
         }
-            private async Task ValidateNoOverlap(AvailabilityModel.Request request, int year, int month)
+        private async Task ValidateNoOverlap(AvailabilityModel.Request request, int year, int month)
         {
             foreach (var entry in request.Days)
             {
@@ -138,19 +172,36 @@ namespace Dsw2026Tpi.Application.Services
                 }
             }
         }
-        private async Task RemoveExistingUnbookedSchedule(Guid doctorId, int year, int month)
+        private async Task<HashSet<(DayOfWeek Day, TimeOnly Start, TimeOnly End)>> RemoveExistingUnbookedSchedule(Guid doctorId, int year, int month)
         {
-            var existingAvailabilities = await _persistence.GetFiltered<Availability>(a =>
-                a.DoctorId == doctorId && a.Year == year && a.Month == month) ?? [];
+            var existingAvailabilities = (await _persistence.GetFiltered<Availability>(a =>
+                a.DoctorId == doctorId && a.Year == year && a.Month == month) ?? []).ToList();
+
+            var preserved = new HashSet<(DayOfWeek Day, TimeOnly Start, TimeOnly End)>();
+            var toDelete = new List<(Availability avail, List<Slot> slots)>();
+
             foreach (var availability in existingAvailabilities)
             {
-                var slots = (await _persistence.GetFiltered<Slot>(s => s.AvailabilityId == availability.Id) ?? []).ToList();
+                var slots = (await _persistence.GetFiltered<Slot>(s =>
+                    s.AvailabilityId == availability.Id) ?? []).ToList();
+
                 if (slots.Any(s => s.Status != SlotStatus.Available))
-                    continue; // tiene turnos reservados/atendidos -> se preserva, no se toca
+                {
+                    preserved.Add((availability.DayOfWeek, availability.StartTime, availability.EndTime));
+                    continue;
+                }
+
+                toDelete.Add((availability, slots));
+            }
+
+            foreach (var (avail, slots) in toDelete)
+            {
                 foreach (var slot in slots)
                     await _persistence.Delete(slot);
-                await _persistence.Delete(availability);
+                await _persistence.Delete(avail);
             }
+
+            return preserved;
         }
         private static IEnumerable<DateOnly> DatesInMonthFor(DayOfWeek dayOfWeek, DateOnly from)
         {
@@ -165,8 +216,6 @@ namespace Dsw2026Tpi.Application.Services
         {
             if (request.Days is null || request.Days.Count == 0)
                 throw new ValidationException("Debe indicar al menos un día", "AVAILABILITY_DAYS_REQUIRED");
-            if (request.Days.Select(d => d.Day.ToUpperInvariant()).Distinct().Count() != request.Days.Count)
-                throw new ValidationException("No se puede repetir el mismo día en la misma solicitud", "AVAILABILITY_DUPLICATE_DAY");
             foreach (var entry in request.Days)
             {
                 if (!DayNames.ContainsKey(entry.Day))
@@ -174,11 +223,25 @@ namespace Dsw2026Tpi.Application.Services
                 if (!TimeOnly.TryParse(entry.StartTime, out var start) || !TimeOnly.TryParse(entry.EndTime, out var end) || start >= end)
                     throw new ValidationException("El horario de inicio debe ser menor al de salida", "AVAILABILITY_INVALID_RANGE");
             }
+            var grouped = request.Days.GroupBy(d => d.Day.ToUpperInvariant());
+            foreach (var group in grouped)
+            {
+                var entries = group.ToList();
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    var startA = TimeOnly.Parse(entries[i].StartTime);
+                    var endA = TimeOnly.Parse(entries[i].EndTime);
+                    for (int j = i + 1; j < entries.Count; j++)
+                    {
+                        var startB = TimeOnly.Parse(entries[j].StartTime);
+                        var endB = TimeOnly.Parse(entries[j].EndTime);
+                        if (startA < endB && startB < endA)
+                            throw new ValidationException(
+                                $"Los horarios del día {group.Key} se superponen",
+                                "AVAILABILITY_TIME_OVERLAP");
+                    }
+                }
+            }
         }
     }
-
-
-
-
-
 }
